@@ -6,6 +6,7 @@ from supabase import create_client, Client
 import requests
 import hashlib
 import base64
+import re
 
 st.set_page_config(page_title="Gemini Enterprise Engine", layout="wide")
 
@@ -149,10 +150,10 @@ if st.button("Chambua na Uhifadhi") or audio_bytes is not None:
                 params = {'key': GEMINI_TOKEN}
                 
                 system_instruction = (
-                    "You are a strict financial data extractor. Analyze the input (text or audio transaction in Swahili/English). "
+                    "You are a strict financial data extractor. Analyze the input text or audio transaction in Swahili/English. "
                     "Identify if it is 'income' or 'expense', extract the exact numeric amount, and give a short English description. "
-                    "Return ONLY a valid JSON object exactly like this, no markdown backticks, no extra text: "
-                    "{\n  \"type\": \"income\",\n  \"amount\": 15000,\n  \"description\": \"Earrings sale\"\n}"
+                    "Return ONLY a raw valid JSON object exactly like this: "
+                    '{"type": "income", "amount": 15000, "description": "Earrings sale"}'
                 )
 
                 if final_text_prompt:
@@ -180,15 +181,14 @@ if st.button("Chambua na Uhifadhi") or audio_bytes is not None:
                 response_json = response.json()
                 ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 
-                # Kusafisha mabano ya JSON kwa mstari mmoja usio na hitilafu
-                if ai_text.startswith("```json"):
-                    ai_text = ai_text.replace("
-```json", "").replace("```", "").strip()
-                elif ai_text.startswith("```"):
-                    ai_text = ai_text.replace("
-```", "").strip()
+                # Njia salama ya kuvuta mabano ya JSON kwa kutumia regex ili kuepuka alama za Markdown zilizorudi
+                match = re.search(r'\{.*\}', ai_text, re.DOTALL)
+                if match:
+                    json_clean = match.group(0)
+                else:
+                    json_clean = ai_text
                     
-                extracted_data = json.loads(ai_text)
+                extracted_data = json.loads(json_clean)
                 
                 db_record = {
                     "type": extracted_data["type"],
@@ -260,7 +260,7 @@ if data:
                     f"Keep the tone encouraging, professional, and friendly."
                 )
                 
-                url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent)"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 payload = {"contents": [{"parts": [{"text": advisor_prompt}]}]}
                 headers = {'Content-Type': 'application/json'}
                 params = {'key': GEMINI_TOKEN}
