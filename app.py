@@ -26,8 +26,10 @@ except ImportError:
 # =====================================================================
 # 1. FUNGUO ZA KUSHUGULIKIA SEVA
 # =====================================================================
-SUPABASE_URL = "[https://ndpuprbdulfrjwxakfmm.supabase.co](https://ndpuprbdulfrjwxakfmm.supabase.co)"
+SUPABASE_URL = "https://ndpuprbdulfrjwxakfmm.supabase.co"
+
 try:
+    # Kusoma funguo kutoka kwenye Streamlit Secrets
     SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
     GEMINI_TOKEN = st.secrets["GEMINI_TOKEN"]
 except Exception:
@@ -35,7 +37,11 @@ except Exception:
     st.stop()
 
 try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    # Tiba ya 'Invalid URL': Kusafisha URL na Key ili kuondoa nafasi au herufi zilizojificha wakati wa kucopy
+    clean_url = str(SUPABASE_URL).strip()
+    clean_key = str(SUPABASE_KEY).strip()
+    
+    supabase: Client = create_client(clean_url, clean_key)
 except Exception as e:
     st.error(f"Hitilafu ya Supabase: {e}")
     st.stop()
@@ -148,11 +154,10 @@ elif audio_record:
 
 # Kuchakata miamala (Kitufe kikibonyezwa au sauti ikipatikana)
 if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes is not None):
-    # Kuzuia mfumo usichakate mara mbili kama hakuna kipya
     if final_text_prompt or audio_bytes:
         with st.spinner("Gemini inachambua na kupanga muamala wako..."):
             try:
-                url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent)"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 headers = {'Content-Type': 'application/json'}
                 params = {'key': GEMINI_TOKEN}
                 
@@ -162,7 +167,7 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                     "You must output ONLY valid raw JSON with keys: 'type', 'amount', 'description'."
                 )
 
-                # Kutumia mfumo dhabiti wa kulazimisha JSON pekee kupitia config
+                # Kulazimisha jibu kuja kama JSON pekee
                 generation_config = {
                     "response_mime_type": "application/json"
                 }
@@ -192,7 +197,6 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                 response = requests.post(url, headers=headers, json=payload, params=params)
                 response_json = response.json()
                 
-                # Ulinzi thabiti wa kuangalia kama kosa lipo kwenye jibu la API kabla ya kusoma candidates
                 if 'candidates' in response_json and response_json['candidates']:
                     ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
                     extracted_data = json.loads(ai_text)
@@ -269,7 +273,7 @@ if data:
                     f"Keep the tone encouraging, professional, and friendly."
                 )
                 
-                url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent)"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 payload = {"contents": [{"parts": [{"text": advisor_prompt}]}]}
                 
                 advisor_response = requests.post(url, headers=headers, json=payload, params=params)
@@ -370,7 +374,7 @@ if data:
                 story.append(t_tx)
                 
                 story.append(Spacer(1, 30))
-                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama vya vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
+                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama wa vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
                 
                 doc.build(story)
                 pdf_data = pdf_buffer.getvalue()
