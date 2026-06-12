@@ -6,6 +6,7 @@ from supabase import create_client, Client
 import requests
 import hashlib
 import base64
+import re
 import io
 
 # Maktaba za ReportLab kwa ajili ya kutengeneza PDF
@@ -26,7 +27,7 @@ except ImportError:
 # =====================================================================
 # 1. FUNGUO ZA KUSHUGULIKIA SEVA
 # =====================================================================
-SUPABASE_URL = "[https://ndpuprbdulfrjwxakfmm.supabase.co](https://ndpuprbdulfrjwxakfmm.supabase.co)"
+SUPABASE_URL = "https://ndpuprbdulfrjwxakfmm.supabase.co"
 try:
     SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
     GEMINI_TOKEN = st.secrets["GEMINI_TOKEN"]
@@ -76,7 +77,7 @@ if not st.session_state["logged_in"]:
                     else:
                         st.error("Email au Password si sahihi. Tafadhali jaribu tena.")
                 except Exception as e:
-                    st.error(f"Hitilafu ya kuingia: {e}")
+                    st.error(f"Hitilafu ya kuingia: Hakikisha umefanya 'Reload Schema' kule Supabase Dashboard ikiwa jedwali ni jipya. ({e})")
             else:
                 st.warning("Tafadhali jaza nafasi zote.")
                 
@@ -98,7 +99,7 @@ if not st.session_state["logged_in"]:
                     supabase.table("business_users").insert(user_record).execute()
                     st.success("🎉 Akaunti imetengenezwa kikamilifu! Sasa unaweza kuingia kwenye Tab ya Login.")
                 except Exception as e:
-                    st.error(f"Imeshindwa kusajili: {e}")
+                    st.error(f"Imeshindwa kusajili: Hakikisha jedwali la business_users lipo au reload schema cache.")
             else:
                 st.warning("Tafadhali jaza fomu yote.")
     st.stop()
@@ -147,31 +148,26 @@ elif audio_record:
     st.audio(audio_bytes, format='audio/wav')
 
 # Kuchakata miamala (Kitufe kikibonyezwa au sauti ikipatikana)
-if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes is not None):
-    # Kuzuia mfumo usichakate mara mbili kama hakuna kipya
+if st.button("Chambua na Uhifadhi") or audio_bytes is not None:
     if final_text_prompt or audio_bytes:
         with st.spinner("Gemini inachambua na kupanga muamala wako..."):
             try:
-                url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent)"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 headers = {'Content-Type': 'application/json'}
                 params = {'key': GEMINI_TOKEN}
                 
                 system_instruction = (
-                    "You are a strict financial data extractor. Analyze the input text or audio transaction in Swahili or English. "
+                    "You are a strict financial data extractor. Analyze the input text or audio transaction in Swahili/English. "
                     "Identify if it is 'income' or 'expense', extract the exact numeric amount, and give a short English description. "
-                    "You must output ONLY valid raw JSON with keys: 'type', 'amount', 'description'."
+                    "Return ONLY a raw valid JSON object exactly like this: "
+                    '{"type": "income", "amount": 15000, "description": "Earrings sale"}'
                 )
 
-                # Kutumia mfumo dhabiti wa kulazimisha JSON pekee kupitia config
-                generation_config = {
-                    "response_mime_type": "application/json"
-                }
-
                 if final_text_prompt:
-                    payload = {
-                        "contents": [{"parts": [{"text": f"{system_instruction}\n\nTransaction text: {final_text_prompt}"}]}],
-                        "generationConfig": generation_config
-                    }
+                    prompt = f"{system_instruction}\n\nTransaction text: '{final_text_prompt}'"
+                    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                    response = requests.post(url, headers=headers, json=payload, params=params)
+                
                 elif audio_bytes:
                     audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
                     payload = {
@@ -185,34 +181,36 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                                     }
                                 }
                             ]
-                        }],
-                        "generationConfig": generation_config
+                        }]
                     }
+                    response = requests.post(url, headers=headers, json=payload, params=params)
 
-                response = requests.post(url, headers=headers, json=payload, params=params)
                 response_json = response.json()
+                ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 
-                # Ulinzi thabiti wa kuangalia kama kosa lipo kwenye jibu la API kabla ya kusoma candidates
-                if 'candidates' in response_json and response_json['candidates']:
-                    ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
-                    extracted_data = json.loads(ai_text)
-                    
-                    db_record = {
-                        "type": extracted_data.get("type", "income"),
-                        "amount": float(extracted_data.get("amount", 0)),
-                        "description": extracted_data.get("description", "Transaction"),
-                        "raw_ai_prompt": final_text_prompt if final_text_prompt else "[Sauti ya Kiswahili Ilichakatwa]",
-                        "business_name": biz_name_input
-                    }
-                    
-                    supabase.table("transactions").insert(db_record).execute()
-                    st.success(f"🎉 Muamala wa {biz_name_input} umetafsiriwa na kuhifadhiwa!")
-                    st.rerun()
+                # Njia salama ya kuvuta mabano ya JSON kwa kutumia regex ili kuepuka alama za Markdown
+                match = re.search(r'\{.*\}', ai_text, re.DOTALL)
+                if match:
+                    json_clean = match.group(0)
                 else:
-                    st.error(f"Gemini API Error Response: {response_json}")
+                    json_clean = ai_text
+                    
+                extracted_data = json.loads(json_clean)
+                
+                db_record = {
+                    "type": extracted_data["type"],
+                    "amount": float(extracted_data["amount"]),
+                    "description": extracted_data["description"],
+                    "raw_ai_prompt": final_text_prompt if final_text_prompt else "[Sauti ya Kiswahili Ilichakatwa]",
+                    "business_name": biz_name_input
+                }
+                
+                supabase.table("transactions").insert(db_record).execute()
+                st.success(f"🎉 Muamala wa {biz_name_input} umetafsiriwa na kuhifadhiwa!")
+                st.rerun()
                 
             except Exception as e:
-                st.error(f"Kuna kitu kimefeli wakati wa kuchakata muamala: {e}")
+                st.error(f"Kuna kitu kimefeli wakati wa kuchakata: {e}")
     else:
         st.warning("Tafadhali andika maelezo au rekodi sauti kwanza.")
 
@@ -269,18 +267,18 @@ if data:
                     f"Keep the tone encouraging, professional, and friendly."
                 )
                 
-                url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent)"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 payload = {"contents": [{"parts": [{"text": advisor_prompt}]}]}
+                headers = {'Content-Type': 'application/json'}
+                params = {'key': GEMINI_TOKEN}
                 
                 advisor_response = requests.post(url, headers=headers, json=payload, params=params)
                 advisor_json = advisor_response.json()
                 
-                if 'candidates' in advisor_json and advisor_json['candidates']:
-                    advisor_text = advisor_json['candidates'][0]['content']['parts'][0]['text']
-                    st.success(f"🎯 Ushauri Rasmi kutoka kwa Gemini Advisor kwenda kwa {biz_name_input}:")
-                    st.write(advisor_text)
-                else:
-                    st.error(f"Advisor Response Error: {advisor_json}")
+                advisor_text = advisor_json['candidates'][0]['content']['parts'][0]['text']
+                
+                st.success(f"🎯 Ushauri Rasmi kutoka kwa Gemini Advisor kwenda kwa {biz_name_input}:")
+                st.write(advisor_text)
                 
             except Exception as e:
                 st.error(f"Imeshindwa kuzalisha ushauri wa AI: {e}")
@@ -370,7 +368,7 @@ if data:
                 story.append(t_tx)
                 
                 story.append(Spacer(1, 30))
-                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama vya vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
+                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama wa vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
                 
                 doc.build(story)
                 pdf_data = pdf_buffer.getvalue()
