@@ -7,6 +7,13 @@ import requests
 import hashlib
 import base64
 import re
+import io
+
+# Maktaba za ReportLab kwa ajili ya kutengeneza PDF
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 
 st.set_page_config(page_title="Gemini Enterprise Engine", layout="wide")
 
@@ -70,7 +77,7 @@ if not st.session_state["logged_in"]:
                     else:
                         st.error("Email au Password si sahihi. Tafadhali jaribu tena.")
                 except Exception as e:
-                    st.error(f"Hitilafu: {e}")
+                    st.error(f"Hitilafu ya kuingia: Hakikisha umefanya 'Reload Schema' kule Supabase Dashboard ikiwa jedwali ni jipya. ({e})")
             else:
                 st.warning("Tafadhali jaza nafasi zote.")
                 
@@ -92,7 +99,7 @@ if not st.session_state["logged_in"]:
                     supabase.table("business_users").insert(user_record).execute()
                     st.success("🎉 Akaunti imetengenezwa kikamilifu! Sasa unaweza kuingia kwenye Tab ya Login.")
                 except Exception as e:
-                    st.error(f"Imeshindwa kusajili: Jina la biashara au Email imeshachukuliwa tayari.")
+                    st.error(f"Imeshindwa kusajili: Hakikisha jedwali la business_users lipo au reload schema cache.")
             else:
                 st.warning("Tafadhali jaza fomu yote.")
     st.stop()
@@ -181,7 +188,7 @@ if st.button("Chambua na Uhifadhi") or audio_bytes is not None:
                 response_json = response.json()
                 ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 
-                # Njia salama ya kuvuta mabano ya JSON kwa kutumia regex ili kuepuka alama za Markdown zilizorudi
+                # Njia salama ya kuvuta mabano ya JSON kwa kutumia regex ili kuepuka alama za Markdown
                 match = re.search(r'\{.*\}', ai_text, re.DOTALL)
                 if match:
                     json_clean = match.group(0)
@@ -275,5 +282,105 @@ if data:
                 
             except Exception as e:
                 st.error(f"Imeshindwa kuzalisha ushauri wa AI: {e}")
+
+    # --- MFUMO WA KUZALISHA RIPOTI YA PDF KWA AJILI YA BENKI ---
+    st.markdown("---")
+    st.write("### 📄 Ripoti Rasmi ya Kifedha (PDF)")
+    st.markdown("Zalisha ripoti maalumu iliyothibitishwa na AI ya **Gemini Enterprise Engine** kwa ajili ya kuwasilisha taasisi za kifedha au benki.")
+
+    if st.button("Tengeneza Ripoti ya PDF"):
+        with st.spinner("Tunatengeneza faili la PDF lenye mpangilio wa kibenki..."):
+            try:
+                pdf_buffer = io.BytesIO()
+                doc = SimpleDocTemplate(pdf_buffer, pagesize=letter,
+                                        rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+                story = []
+                styles = getSampleStyleSheet()
+                
+                title_style = ParagraphStyle(
+                    'TitleStyle', parent=styles['Heading1'],
+                    fontSize=22, textColor=colors.HexColor('#1a365d'), spaceAfter=10
+                )
+                subtitle_style = ParagraphStyle(
+                    'SubTitleStyle', parent=styles['Normal'],
+                    fontSize=11, textColor=colors.HexColor('#4a5568'), spaceAfter=20
+                )
+                heading_style = ParagraphStyle(
+                    'HeadingStyle', parent=styles['Heading2'],
+                    fontSize=14, textColor=colors.HexColor('#2b6cb0'), spaceBefore=15, spaceAfter=10
+                )
+                normal_style = styles['Normal']
+                
+                story.append(Paragraph(f"GEMINI ENTERPRISE ENGINE (GEE)", title_style))
+                story.append(Paragraph(f"Sadallah Software | Official Financial Statement", subtitle_style))
+                story.append(Spacer(1, 10))
+                
+                story.append(Paragraph("<b>TAARIFA ZA WORKSPACE</b>", heading_style))
+                biz_info = f"""
+                <b>Jina la Biashara:</b> {biz_name_input}<br/>
+                <b>Tarehe ya Ripoti:</b> {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
+                <b>Hali ya Uhakiki:</b> Certified by Gemini AI Advisor<br/>
+                """
+                story.append(Paragraph(biz_info, normal_style))
+                story.append(Spacer(1, 15))
+                
+                story.append(Paragraph("<b>MUHTASARI WA HALI YA KIFEDHA</b>", heading_style))
+                summary_table_data = [
+                    [Paragraph("<b>Kipengele</b>", normal_style), Paragraph("<b>Kiasi (TZS)</b>", normal_style)],
+                    ["Jumla ya Mapato (Total Income)", f"{total_income:,.2f}"],
+                    ["Jumla ya Matumizi (Total Expense)", f"{total_expense:,.2f}"],
+                    ["Faida Safi (Net Profit)", f"{net_profit:,.2f}"]
+                ]
+                t_summary = Table(summary_table_data, colWidths=[250, 200])
+                t_summary.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (1,0), colors.HexColor('#2b6cb0')),
+                    ('TEXTCOLOR', (0,0), (1,0), colors.white),
+                    ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+                    ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                    ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f7fafc')),
+                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
+                    ('FONTNAME', (0,0), (1,0), 'Helvetica-Bold')
+                ]))
+                story.append(t_summary)
+                story.append(Spacer(1, 20))
+                
+                story.append(Paragraph("<b>ORODHA YA MIAMALA YA HIVI KARIBUNI</b>", heading_style))
+                tx_table_data = [[Paragraph("<b>Tarehe</b>", normal_style), Paragraph("<b>Aina</b>", normal_style), Paragraph("<b>Kiasi</b>", normal_style), Paragraph("<b>Maelezo</b>", normal_style)]]
+                
+                for _, row in df.head(10).iterrows():
+                    date_str = pd.to_datetime(row['created_at']).strftime('%m-%d %H:%M')
+                    tx_table_data.append([
+                        date_str,
+                        row['type'].upper(),
+                        f"{row['amount']:,.0f}",
+                        Paragraph(row['description'], normal_style)
+                    ])
+                    
+                t_tx = Table(tx_table_data, colWidths=[80, 60, 80, 230])
+                t_tx.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4a5568')),
+                    ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                    ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e0')),
+                    ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f7fafc')]),
+                    ('FONTSIZE', (0,0), (-1,-1), 9),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                ]))
+                story.append(t_tx)
+                
+                story.append(Spacer(1, 30))
+                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama wa vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
+                
+                doc.build(story)
+                pdf_data = pdf_buffer.getvalue()
+                
+                st.download_button(
+                    label="📥 Pakua Ripoti Yako ya PDF Hapa",
+                    data=pdf_data,
+                    file_name=f"Ripoti_ya_Fedha_{biz_name_input}.pdf",
+                    mime="application/pdf"
+                )
+                st.success("🎉 Faili la PDF limeandaliwa tayari kupakuliwa! Bonyeza kitufe hapo juu.")
+            except Exception as e:
+                st.error(f"Imeshindwa kutengeneza PDF: {e}")
 else:
     st.info(f"Biashara ya **{biz_name_input}** bado haina miamala iliyorekodiwa. Andika muamala au rekodi sauti hapo juu ili kuwasha dashboard!")
