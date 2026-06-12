@@ -180,6 +180,7 @@ if st.button("Chambua na Uhifadhi") or audio_bytes is not None:
                 response_json = response.json()
                 ai_text = response_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 
+                # Kusafisha mabano ya JSON kwa mstari mmoja usio na hitilafu
                 if ai_text.startswith("```json"):
                     ai_text = ai_text.replace("
 ```json", "").replace("```", "").strip()
