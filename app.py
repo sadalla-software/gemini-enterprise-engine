@@ -63,7 +63,6 @@ def hash_password(password):
 # =====================================================================
 # 2. DESIGN & STYLING (SYNE FONT & PREMIUM DARK BACKGROUND IMAGE)
 # =====================================================================
-# Kama login haijafanyika, weka picha ya background ya mtumiaji. Ikifanyika, weka background safi ya kazi.
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["business_name"] = ""
@@ -166,30 +165,30 @@ custom_css = f"""
     }}
     
     /* Muundo wa Nembo ya Juu Kushoto na Uhuishaji (Animation) */
-    .header-logo-container {
+    .header-logo-container {{
         display: flex;
         align-items: center;
         gap: 14px;
         margin-left: 20px;
         margin-top: 15px;
         font-family: 'Syne', sans-serif;
-    }
+    }}
 
-    .header-logo-img {
+    .header-logo-img {{
         width: 48px;
         height: auto;
-    }
+    }}
 
     /* Wrapper ya kuweka maneno yakae mstari mmoja juu ya mwingine */
-    .logo-text-wrapper {
+    .logo-text-wrapper {{
         display: flex;
         flex-direction: column;
         line-height: 1.1;
         text-align: left;
-    }
+    }}
 
     /* Sadallah: Inatokea Juu kwenda chini */
-    .anim-sadallah {
+    .anim-sadallah {{
         font-weight: 800;
         font-size: 24px;
         letter-spacing: -0.5px;
@@ -197,10 +196,10 @@ custom_css = f"""
         opacity: 0;
         transform: translateY(-20px);
         animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
+    }}
 
     /* Software: Inatokea Chini kwenda juu na ina rangi ya Cyan Blue */
-    .anim-software {
+    .anim-software {{
         font-weight: 700;
         font-size: 20px;
         letter-spacing: -0.5px;
@@ -210,22 +209,22 @@ custom_css = f"""
         transform: translateY(20px);
         animation: slideFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         animation-delay: 0.15s; /* Inachelewa kidogo ili kuleta muonekano wa kifahari */
-    }
+    }}
 
     /* KEYFRAMES ZA HUISHI (ANIMATION EFFECTS) */
-    @keyframes slideFromTop {
-        to {
+    @keyframes slideFromTop {{
+        to {{
             opacity: 1;
             transform: translateY(0);
-        }
-    }
+        }}
+    }}
 
-    @keyframes slideFromBottom {
-        to {
+    @keyframes slideFromBottom {{
+        to {{
             opacity: 1;
             transform: translateY(0);
-        }
-    }
+        }}
+    }}
     
     /* Mitindo ya redio button ya kuchagulia log in/sign up */
     div[data-testid="stRadio"] label {{
@@ -241,7 +240,6 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # 3. Mfumo wa Kuingia (Login/Signup Screen)
 # =====================================================================
 if not st.session_state["logged_in"]:
-    # Nembo ya Juu Kushoto
     # Nembo ya Juu Kushoto ikiwa na Maandishi yenye Uhuishaji (Animation)
     if logo_b64:
         st.markdown(f'''
