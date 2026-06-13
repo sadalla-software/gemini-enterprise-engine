@@ -34,7 +34,7 @@ def get_base64_image(image_path):
     return ""
 
 # Kusoma Logo na Picha ya Background
-logo_b64 = get_base64_image("Sadallah Software3.png")
+logo_b64 = get_base64_image("Sadallah Software.png")
 bg_b64 = get_base64_image("Abc.jpg")
 
 # =====================================================================
