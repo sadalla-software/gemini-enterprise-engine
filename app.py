@@ -165,24 +165,67 @@ custom_css = f"""
         font-family: 'Syne', sans-serif;
     }}
     
-    /* Muundo wa Nembo ya Juu Kushoto */
-    .header-logo-container {{
+    /* Muundo wa Nembo ya Juu Kushoto na Uhuishaji (Animation) */
+    .header-logo-container {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         margin-left: 20px;
-        margin-top: 10px;
+        margin-top: 15px;
         font-family: 'Syne', sans-serif;
-    }}
-    .header-logo-img {{
-        width: 45px;
+    }
+
+    .header-logo-img {
+        width: 48px;
         height: auto;
-    }}
-    .header-logo-text {{
+    }
+
+    /* Wrapper ya kuweka maneno yakae mstari mmoja juu ya mwingine */
+    .logo-text-wrapper {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        text-align: left;
+    }
+
+    /* Sadallah: Inatokea Juu kwenda chini */
+    .anim-sadallah {
         font-weight: 800;
         font-size: 24px;
         letter-spacing: -0.5px;
-    }}
+        display: block;
+        opacity: 0;
+        transform: translateY(-20px);
+        animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Software: Inatokea Chini kwenda juu na ina rangi ya Cyan Blue */
+    .anim-software {
+        font-weight: 700;
+        font-size: 20px;
+        letter-spacing: -0.5px;
+        color: #00b4d8 !important; /* Rangi halisi ya Cyan Blue ya Logo yako */
+        display: block;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: slideFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.15s; /* Inachelewa kidogo ili kuleta muonekano wa kifahari */
+    }
+
+    /* KEYFRAMES ZA HUISHI (ANIMATION EFFECTS) */
+    @keyframes slideFromTop {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideFromBottom {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
     
     /* Mitindo ya redio button ya kuchagulia log in/sign up */
     div[data-testid="stRadio"] label {{
@@ -199,16 +242,26 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # =====================================================================
 if not st.session_state["logged_in"]:
     # Nembo ya Juu Kushoto
+    # Nembo ya Juu Kushoto ikiwa na Maandishi yenye Uhuishaji (Animation)
     if logo_b64:
         st.markdown(f'''
             <div class="header-logo-container">
                 <img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />
-                <span class="header-logo-text">Sadallah<br/>
-                Software</span>
+                <div class="logo-text-wrapper">
+                    <span class="anim-sadallah">Sadallah</span>
+                    <span class="anim-software">Software</span>
+                </div>
             </div>
         ''', unsafe_allow_html=True)
     else:
-        st.markdown("<h2 style='font-weight:800; color:#fff; margin-left:20px; font-family:\"Syne\"'>SADALLAH</h2>", unsafe_allow_html=True)
+        st.markdown('''
+            <div class="header-logo-container">
+                <div class="logo-text-wrapper">
+                    <span class="anim-sadallah" style="color:#fff;">Sadallah</span>
+                    <span class="anim-software">Software</span>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
     
     _, center_col, _ = st.columns([1, 1.8, 1])
     
