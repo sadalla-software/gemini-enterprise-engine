@@ -189,8 +189,8 @@ custom_css = f"""
 
     /* Sadallah: Inatokea Juu kwenda chini */
     .anim-sadallah {{
-        font-weight: 700;
-        font-size: 20px;
+        font-weight: 800;
+        font-size: 22px;
         letter-spacing: -0.5px;
         display: block;
         opacity: 0;
@@ -200,8 +200,8 @@ custom_css = f"""
 
     /* Software: Inatokea Chini kwenda juu na ina rangi ya Cyan Blue */
     .anim-software {{
-        font-weight: 700;
-        font-size: 20px;
+        font-weight: 800;
+        font-size: 22px;
         letter-spacing: -0.5px;
         color: #00b4d8 !important; /* Rangi halisi ya Cyan Blue ya Logo yako */
         display: block;
