@@ -194,7 +194,7 @@ custom_css = f"""
         letter-spacing: -0.5px;
         display: block;
         opacity: 0;
-        color: #00b4d1;        transform: translateY(-20px);
+        color: #ffffff;        transform: translateY(-20px);
         animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }}
 
