@@ -189,12 +189,12 @@ custom_css = f"""
 
     /* Sadallah: Inatokea Juu kwenda chini */
     .anim-sadallah {{
-        font-weight: 800;
-        font-size: 24px;
+        font-weight: 700;
+        font-size: 20px;
         letter-spacing: -0.5px;
         display: block;
         opacity: 0;
-        transform: translateY(-20px);
+        color: #00b4d1;        transform: translateY(-20px);
         animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }}
 
