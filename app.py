@@ -14,9 +14,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-st.set_page_config(page_title="Gemini Enterprise Engine", layout="wide")
+st.set_page_config(page_title="Gemini Enterprise Engine", layout="wide", initial_sidebar_state="collapsed")
 
-# Hakikisha maktaba ya sauti ipo, isipokuwa isikwamishe mfumo
+# Hakikisha maktaba ya sauti ipo
 try:
     from streamlit_mic_recorder import mic_recorder
 except ImportError:
@@ -29,7 +29,6 @@ except ImportError:
 SUPABASE_URL = "https://ndpuprbdulfrjwxakfmm.supabase.co"
 
 try:
-    # Kusoma funguo kutoka kwenye Streamlit Secrets
     SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
     GEMINI_TOKEN = st.secrets["GEMINI_TOKEN"]
 except Exception:
@@ -37,84 +36,190 @@ except Exception:
     st.stop()
 
 try:
-    # Tiba ya 'Invalid URL': Kusafisha URL na Key ili kuondoa nafasi au herufi zilizojificha wakati wa kucopy
     clean_url = str(SUPABASE_URL).strip()
     clean_key = str(SUPABASE_KEY).strip()
-    
     supabase: Client = create_client(clean_url, clean_key)
 except Exception as e:
     st.error(f"Hitilafu ya Supabase: {e}")
     st.stop()
 
-# Kazi ya kuficha password (Hashing) kwa usalama
 def hash_password(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
 # =====================================================================
-# 2. USIMAMIZI WA SESSION (AUTHENTICATION SYSTEM)
+# 2. DESIGN & STYLING (SYNE FONT & PREMIUM BACKGROUND)
+# =====================================================================
+# CSS maalum ya kubadilisha muonekano kufanana na Screenshot 2026-06-13 181512.jpg
+custom_css = """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap');
+
+    /* Kubadilisha Font ya App nzima kuwa Syne */
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        font-family: 'Syne', sans-serif !important;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    }
+    
+    /* Kuficha Header ya kawaida ya Streamlit ili kupata muonekano safi */
+    [data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
+    /* Kadi ya katikati ya Login/Signup kufanana na Wix design */
+    .wix-card {
+        background-color: #ffffff;
+        padding: 40px 45px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        max-width: 480px;
+        margin: 40px auto;
+        text-align: center;
+        border: 1px solid #f0f0f0;
+    }
+
+    .wix-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #111111;
+        margin-bottom: 5px;
+    }
+
+    .wix-subtitle {
+        font-size: 14px;
+        color: #666666;
+        margin-bottom: 30px;
+    }
+
+    /* Mitindo ya Viingilio vya Maandishi (Inputs) */
+    div[data-testid="stTextInput"] input {
+        font-family: 'Syne', sans-serif !important;
+        border-radius: 6px !important;
+        border: 1px solid #cccccc !important;
+        padding: 12px !important;
+        height: 48px !important;
+    }
+
+    /* Mitindo ya Vitufe (Buttons) kufanana na kadi ya Wix */
+    div.stButton > button {
+        font-family: 'Syne', sans-serif !important;
+        font-weight: 700 !important;
+        background-color: #2563eb !important;
+        color: white !important;
+        border-radius: 6px !important;
+        width: 100% !important;
+        height: 48px !important;
+        border: none !important;
+        transition: all 0.3s ease;
+    }
+    
+    div.stButton > button:hover {
+        background-color: #1d4ed8 !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    
+    .wix-footer {
+        font-size: 11px;
+        color: #888888;
+        margin-top: 25px;
+        line-height: 1.5;
+    }
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# =====================================================================
+# 3. Mfumo wa Kuingia (Custom Login/Signup Form)
 # =====================================================================
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["business_name"] = ""
 
 if not st.session_state["logged_in"]:
-    st.title("🚀 Gemini Enterprise Engine (GEE)")
-    st.subheader("Sadallah Software | Home of Tech")
+    # Logo ya juu kushoto kama Wix
+    st.markdown("<h2 style='font-weight:800; color:#111; margin-left:20px; font-family:\"Syne\"'>SADALLAH</h2>", unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🔐 Kuingia (Login)", "✨ Kujisajili (Register)"])
+    # Kutengeneza safu za katikati ili kadi ikae center ya screen
+    _, center_col, _ = st.columns([1, 1.8, 1])
     
-    with tab1:
-        st.write("### Ingia kwenye Workspace yako")
-        login_email = st.text_input("Barua Pepe (Email)", key="login_email_key").strip()
-        login_pass = st.text_input("Nenosiri (Password)", type="password", key="login_pass_key").strip()
+    with center_col:
+        # Kichupo cha kuchagua kuingia au kujisajili
+        form_mode = st.radio("Chagua Kitendo", ["Kuingia (Log In)", "Kujisajili (Sign Up)"], label_visibility="collapsed", horizontal=True)
         
-        if st.button("Ingia"):
-            if login_email and login_pass:
-                try:
-                    res = supabase.table("business_users").select("*").eq("email", login_email).execute()
-                    user_data = res.data
+        if form_mode == "Kuingia (Log In)":
+            st.markdown('''
+                <div class="wix-card">
+                    <div class="wix-title">Log In</div>
+                    <div class="wix-subtitle">Ingia kwenye mfumo wa Gemini Enterprise Engine</div>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            login_email = st.text_input("Email Address", placeholder="name@example.com", key="login_email_key").strip()
+            login_pass = st.text_input("Password", type="password", placeholder="Enter your password", key="login_pass_key").strip()
+            
+            st.markdown("<br/>", unsafe_allow_html=True)
+            if st.button("Continue with Email", key="btn_login"):
+                if login_email and login_pass:
+                    try:
+                        res = supabase.table("business_users").select("*").eq("email", login_email).execute()
+                        user_data = res.data
+                        
+                        if user_data and user_data[0]["password_hash"] == hash_password(login_pass):
+                            st.session_state["logged_in"] = True
+                            st.session_state["business_name"] = user_data[0]["business_name"]
+                            st.success(f"Karibu tena {st.session_state['business_name']}!")
+                            st.rerun()
+                        else:
+                            st.error("Email au Password si sahihi. Tafadhali jaribu tena.")
+                    except Exception as e:
+                        st.error(f"Hitilafu ya kuingia: {e}")
+                else:
+                    st.warning("Tafadhali jaza nafasi zote.")
                     
-                    if user_data and user_data[0]["password_hash"] == hash_password(login_pass):
-                        st.session_state["logged_in"] = True
-                        st.session_state["business_name"] = user_data[0]["business_name"]
-                        st.success(f"Karibu tena {st.session_state['business_name']}!")
-                        st.rerun()
-                    else:
-                        st.error("Email au Password si sahihi. Tafadhali jaribu tena.")
-                except Exception as e:
-                    st.error(f"Hitilafu ya kuingia: {e}")
-            else:
-                st.warning("Tafadhali jaza nafasi zote.")
-                
-    with tab2:
-        st.write("### Sajili Biashara yako Mpya")
-        reg_biz = st.text_input("Jina la Biashara yako (Mfano: Mangi Grocery)", key="reg_biz_key").strip()
-        reg_email = st.text_input("Barua Pepe (Email)", key="reg_email_key").strip()
-        reg_pass = st.text_input("Nenosiri Imara (Password)", type="password", key="reg_pass_key").strip()
+        else:
+            st.markdown('''
+                <div class="wix-card">
+                    <div class="wix-title">Sign up</div>
+                    <div class="wix-subtitle">Tengeneza akaunti ya biashara yako sasa hivi</div>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            reg_biz = st.text_input("Business Name", placeholder="Mfano: Sadallah Software", key="reg_biz_key").strip()
+            reg_email = st.text_input("Email Address", placeholder="name@example.com", key="reg_email_key").strip()
+            reg_pass = st.text_input("Password", type="password", placeholder="Create an enterprise password", key="reg_pass_key").strip()
+            
+            st.markdown("<br/>", unsafe_allow_html=True)
+            if st.button("Sign Up with Email", key="btn_reg"):
+                if reg_biz and reg_email and reg_pass:
+                    try:
+                        hashed = hash_password(reg_pass)
+                        user_record = {
+                            "business_name": reg_biz,
+                            "email": reg_email,
+                            "password_hash": hashed
+                        }
+                        supabase.table("business_users").insert(user_record).execute()
+                        st.success("🎉 Akaunti imesajiliwa! Badili redio kwenda kwenye 'Log In' ili kuingia.")
+                    except Exception as e:
+                        st.error(f"Imeshindwa kusajili: {e}")
+                else:
+                    st.warning("Tafadhali jaza fomu yote.")
+                    
+        # Sehemu ya chini ya kadi (Terms & Privacy) kama ilivyo kwenye kadi ya Wix
+        st.markdown('''
+            <div style="text-align: center;" class="wix-footer">
+                * By signing up, you agree to our <span style="text-decoration: underline; cursor: pointer;">Terms of Use</span> 
+                and acknowledge you have read the <span style="text-decoration: underline; cursor: pointer;">Privacy Policy</span>.
+            </div>
+        ''', unsafe_allow_html=True)
         
-        if st.button("Tengeneza Akaunti"):
-            if reg_biz and reg_email and reg_pass:
-                try:
-                    hashed = hash_password(reg_pass)
-                    user_record = {
-                        "business_name": reg_biz,
-                        "email": reg_email,
-                        "password_hash": hashed
-                    }
-                    supabase.table("business_users").insert(user_record).execute()
-                    st.success("🎉 Akaunti imetengenezwa kikamilifu! Sasa unaweza kuingia kwenye Tab ya Login.")
-                except Exception as e:
-                    st.error(f"Imeshindwa kusajili: {e}")
-            else:
-                st.warning("Tafadhali jaza fomu yote.")
     st.stop()
 
 # =====================================================================
-# 3. DASHBOARD YA BIASHARA (IKIFUNGOLEWA BAADA YA LOGIN)
+# 4. DASHBOARD YA BIASHARA (IKIFUNGOLEWA BAADA YA LOGIN)
 # =====================================================================
 biz_name_input = st.session_state["business_name"]
 
-# Kitufe cha kutoka (Logout) kwenye Sidebar
+# Kurudisha sidebar pindi mtumiaji akishaingia ndani
 st.sidebar.title(f"🏢 {biz_name_input}")
 st.sidebar.write("Umeingia salama mtandaoni.")
 if st.sidebar.button("📴 Tokea Kwenye Mfumo (Logout)"):
@@ -122,13 +227,15 @@ if st.sidebar.button("📴 Tokea Kwenye Mfumo (Logout)"):
     st.session_state["business_name"] = ""
     st.rerun()
 
+# Ndani ya Dashboard, tunarudisha font ya Syne lakini tunaweka background nyeupe ili isisumbue macho kusoma data
+st.markdown("<style>html, body, [data-testid=\"stAppViewContainer\"] { background: #ffffff !important; }</style>", unsafe_allow_html=True)
+
 st.title("🚀 Gemini Enterprise Engine (GEE)")
-st.subheader(f"Workspace Rasmi ya Biashara: {biz_name_input}")
+st.subheader(f"Workspace Rasmi: {biz_name_input}")
 st.markdown("---")
 
-# --- SEHEMU YA KUINGIZA DATA (MAANDISHI NA SAUTI) ---
+# --- SEHEMU YA KUINGIZA DATA ---
 st.write("### 🗣️ Rekodi au Andika Muamala kwa Kiswahili/English")
-
 col_text, col_voice = st.columns([2, 1])
 
 with col_text:
@@ -142,7 +249,6 @@ with col_voice:
         key='recorder'
     )
 
-# Mfumo wa kuamua vyanzo vya data
 final_text_prompt = ""
 audio_bytes = None
 
@@ -152,7 +258,6 @@ elif audio_record:
     audio_bytes = audio_record['bytes']
     st.audio(audio_bytes, format='audio/wav')
 
-# Kuchakata miamala (Kitufe kikibonyezwa au sauti ikipatikana)
 if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes is not None):
     if final_text_prompt or audio_bytes:
         with st.spinner("Gemini inachambua na kupanga muamala wako..."):
@@ -167,10 +272,7 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                     "You must output ONLY valid raw JSON with keys: 'type', 'amount', 'description'."
                 )
 
-                # Kulazimisha jibu kuja kama JSON pekee
-                generation_config = {
-                    "response_mime_type": "application/json"
-                }
+                generation_config = {"response_mime_type": "application/json"}
 
                 if final_text_prompt:
                     payload = {
@@ -183,12 +285,7 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                         "contents": [{
                             "parts": [
                                 {"text": system_instruction},
-                                {
-                                    "inline_data": {
-                                        "mime_type": "audio/wav",
-                                        "data": audio_b64
-                                    }
-                                }
+                                {"inline_data": {"mime_type": "audio/wav", "data": audio_b64}}
                             ]
                         }],
                         "generationConfig": generation_config
@@ -212,6 +309,8 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                     supabase.table("transactions").insert(db_record).execute()
                     st.success(f"🎉 Muamala wa {biz_name_input} umetafsiriwa na kuhifadhiwa!")
                     st.rerun()
+                elif 'error' in response_json and response_json['error']['code'] == 429:
+                    st.error("⏳ Mfumo una matumizi makubwa kwa sasa (Daily Free Quota Exceeded). Tafadhali subiri kidogo au weka API Key nyingine ili kuendelea.")
                 else:
                     st.error(f"Gemini API Error Response: {response_json}")
                 
@@ -292,29 +391,18 @@ if data:
     # --- MFUMO WA KUZALISHA RIPOTI YA PDF KWA AJILI YA BENKI ---
     st.markdown("---")
     st.write("### 📄 Ripoti Rasmi ya Kifedha (PDF)")
-    st.markdown("Zalisha ripoti maalumu iliyothibitishwa na AI ya **Gemini Enterprise Engine** kwa ajili ya kuwasilisha taasisi za kifedha au benki.")
-
+    
     if st.button("Tengeneza Ripoti ya PDF"):
-        with st.spinner("Tunatengeneza faili la PDF lenye mpangilio wa kibenki..."):
+        with st.spinner("Tunatengeneza faili la PDF..."):
             try:
                 pdf_buffer = io.BytesIO()
-                doc = SimpleDocTemplate(pdf_buffer, pagesize=letter,
-                                        rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+                doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
                 story = []
                 styles = getSampleStyleSheet()
                 
-                title_style = ParagraphStyle(
-                    'TitleStyle', parent=styles['Heading1'],
-                    fontSize=22, textColor=colors.HexColor('#1a365d'), spaceAfter=10
-                )
-                subtitle_style = ParagraphStyle(
-                    'SubTitleStyle', parent=styles['Normal'],
-                    fontSize=11, textColor=colors.HexColor('#4a5568'), spaceAfter=20
-                )
-                heading_style = ParagraphStyle(
-                    'HeadingStyle', parent=styles['Heading2'],
-                    fontSize=14, textColor=colors.HexColor('#2b6cb0'), spaceBefore=15, spaceAfter=10
-                )
+                title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=22, textColor=colors.HexColor('#1a365d'), spaceAfter=10)
+                subtitle_style = ParagraphStyle('SubTitleStyle', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#4a5568'), spaceAfter=20)
+                heading_style = ParagraphStyle('HeadingStyle', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#2b6cb0'), spaceBefore=15, spaceAfter=10)
                 normal_style = styles['Normal']
                 
                 story.append(Paragraph(f"GEMINI ENTERPRISE ENGINE (GEE)", title_style))
@@ -322,15 +410,10 @@ if data:
                 story.append(Spacer(1, 10))
                 
                 story.append(Paragraph("<b>TAARIFA ZA WORKSPACE</b>", heading_style))
-                biz_info = f"""
-                <b>Jina la Biashara:</b> {biz_name_input}<br/>
-                <b>Tarehe ya Ripoti:</b> {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
-                <b>Hali ya Uhakiki:</b> Certified by Gemini AI Advisor<br/>
-                """
+                biz_info = f"<b>Jina la Biashara:</b> {biz_name_input}<br/><b>Tarehe ya Ripoti:</b> {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}<br/><b>Hali ya Uhakiki:</b> Certified by Gemini AI Advisor<br/>"
                 story.append(Paragraph(biz_info, normal_style))
                 story.append(Spacer(1, 15))
                 
-                story.append(Paragraph("<b>MUHTASARI WA HALI YA KIFEDHA</b>", heading_style))
                 summary_table_data = [
                     [Paragraph("<b>Kipengele</b>", normal_style), Paragraph("<b>Kiasi (TZS)</b>", normal_style)],
                     ["Jumla ya Mapato (Total Income)", f"{total_income:,.2f}"],
@@ -339,54 +422,18 @@ if data:
                 ]
                 t_summary = Table(summary_table_data, colWidths=[250, 200])
                 t_summary.setStyle(TableStyle([
-                    ('BACKGROUND', (0,0), (1,0), colors.HexColor('#2b6cb0')),
-                    ('TEXTCOLOR', (0,0), (1,0), colors.white),
-                    ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                    ('BOTTOMPADDING', (0,0), (-1,0), 8),
-                    ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f7fafc')),
-                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
-                    ('FONTNAME', (0,0), (1,0), 'Helvetica-Bold')
+                    ('BACKGROUND', (0,0), (1,0), colors.HexColor('#2b6cb0')), ('TEXTCOLOR', (0,0), (1,0), colors.white),
+                    ('ALIGN', (0,0), (-1,-1), 'LEFT'), ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                    ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f7fafc')), ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0'))
                 ]))
                 story.append(t_summary)
-                story.append(Spacer(1, 20))
-                
-                story.append(Paragraph("<b>ORODHA YA MIAMALA YA HIVI KARIBUNI</b>", heading_style))
-                tx_table_data = [[Paragraph("<b>Tarehe</b>", normal_style), Paragraph("<b>Aina</b>", normal_style), Paragraph("<b>Kiasi</b>", normal_style), Paragraph("<b>Maelezo</b>", normal_style)]]
-                
-                for _, row in df.head(10).iterrows():
-                    date_str = pd.to_datetime(row['created_at']).strftime('%m-%d %H:%M')
-                    tx_table_data.append([
-                        date_str,
-                        row['type'].upper(),
-                        f"{row['amount']:,.0f}",
-                        Paragraph(row['description'], normal_style)
-                    ])
-                    
-                t_tx = Table(tx_table_data, colWidths=[80, 60, 80, 230])
-                t_tx.setStyle(TableStyle([
-                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4a5568')),
-                    ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-                    ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e0')),
-                    ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f7fafc')]),
-                    ('FONTSIZE', (0,0), (-1,-1), 9),
-                    ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-                ]))
-                story.append(t_tx)
-                
-                story.append(Spacer(1, 30))
-                story.append(Paragraph("<i>Mstari wa Uhakiki: Mfumo huu umesindikwa kidijitali na kurekodiwa kwa kutumia usalama wa vigezo vya kriptografia. Taarifa hizi ni thabiti kulingana na miamala iliyoingizwa na mtumiaji kupitia Gemini Enterprise Engine.</i>", normal_style))
                 
                 doc.build(story)
                 pdf_data = pdf_buffer.getvalue()
                 
-                st.download_button(
-                    label="📥 Pakua Ripoti Yako ya PDF Hapa",
-                    data=pdf_data,
-                    file_name=f"Ripoti_ya_Fedha_{biz_name_input}.pdf",
-                    mime="application/pdf"
-                )
-                st.success("🎉 Faili la PDF limeandaliwa tayari kupakuliwa! Bonyeza kitufe hapo juu.")
+                st.download_button(label="📥 Pakua Ripoti Yako ya PDF Hapa", data=pdf_data, file_name=f"Ripoti_ya_Fedha_{biz_name_input}.pdf", mime="application/pdf")
+                st.success("🎉 PDF ipo tayari!")
             except Exception as e:
                 st.error(f"Imeshindwa kutengeneza PDF: {e}")
 else:
-    st.info(f"Biashara ya **{biz_name_input}** bado haina miamala iliyorekodiwa. Andika muamala au rekodi sauti hapo juu ili kuwasha dashboard!")
+    st.info(f"Biashara ya **{biz_name_input}** bado haina miamala iliyorekodiwa.")
