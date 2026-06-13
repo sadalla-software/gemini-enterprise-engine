@@ -61,7 +61,7 @@ def hash_password(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
 # =====================================================================
-# 2. DESIGN & STYLING (SYNE FONT & PREMIUM DARK BACKGROUND IMAGE)
+# 2. DESIGN & STYLING (SPLIT-SCREEN DESIGN LIKE THE UPLOADED SPEC)
 # =====================================================================
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
@@ -70,14 +70,8 @@ if "logged_in" not in st.session_state:
 if not st.session_state["logged_in"]:
     background_css = f"""
     html, body, [data-testid="stAppViewContainer"], .stApp {{
+        background-color: #1e1e24 !important;
         font-family: 'Syne', sans-serif !important;
-        background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("data:image/jpeg;base64,{bg_b64}") !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
-    }}
-    .header-logo-text {{
-        color: #ffffff !important;
     }}
     """
 else:
@@ -85,9 +79,6 @@ else:
     html, body, [data-testid="stAppViewContainer"], .stApp {{
         font-family: 'Syne', sans-serif !important;
         background: #ffffff !important;
-    }}
-    .header-logo-text {{
-        color: #111111 !important;
     }}
     """
 
@@ -101,85 +92,114 @@ custom_css = f"""
         background: transparent !important;
     }}
 
-    /* Kadi ya katikati ya Login/Signup (Wix layout adaptation) */
-    .wix-card {{
-        background-color: #ffffff;
-        padding: 40px 45px;
-        border-radius: 12px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-        max-width: 480px;
-        margin: 10px auto 30px auto;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Split Screen Container */
+    .split-container {{
+        display: flex;
+        width: 100%;
+        max-width: 1100px;
+        min-height: 580px;
+        background-color: #26262b;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        margin: 40px auto;
     }}
 
-    .wix-title {{
+    /* Left Poster Section */
+    .poster-side {{
+        width: 50%;
+        position: relative;
+        background-image: linear-gradient(to top, rgba(15, 15, 18, 0.95), rgba(15, 15, 18, 0.3)), url("data:image/jpeg;base64,{bg_b64}");
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 40px;
+        overflow: hidden;
+    }}
+
+    /* Slider / Poster Text Sliding Animation (Kulia kwenda Kushoto) */
+    .sliding-text {{
+        font-size: 26px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.3;
+        margin-bottom: 20px;
+        transform: translateX(100%);
+        animation: slideFromRight 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.4s;
+    }}
+
+    /* Right Form Section */
+    .form-side {{
+        width: 50%;
+        padding: 45px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: #ffffff;
+    }}
+
+    .form-title {{
         font-size: 32px;
         font-weight: 700;
-        color: #111111;
+        color: #ffffff;
         margin-bottom: 5px;
-        font-family: 'Syne', sans-serif;
     }}
 
-    .wix-subtitle {{
+    .form-subtitle {{
         font-size: 14px;
-        color: #666666;
-        margin-bottom: 20px;
-        font-family: 'Syne', sans-serif;
+        color: #a0a0ab;
+        margin-bottom: 30px;
     }}
 
-    /* Mitindo ya Viingilio vya Maandishi */
+    /* Input Field Overrides to Match Dark Spec */
     div[data-testid="stTextInput"] input {{
         font-family: 'Syne', sans-serif !important;
-        border-radius: 6px !important;
-        border: 1px solid #cccccc !important;
+        border-radius: 8px !important;
+        border: 1px solid #44444f !important;
+        background-color: #1e1e24 !important;
         padding: 12px !important;
         height: 48px !important;
-        color: #111111 !important;
+        color: #ffffff !important;
+    }}
+    
+    div[data-testid="stTextInput"] input:focus {{
+        border-color: #00b4d8 !important;
     }}
 
-    /* Mitindo ya Vitufe */
+    /* Custom Submit Button mimicking premium UI */
     div.stButton > button {{
         font-family: 'Syne', sans-serif !important;
         font-weight: 700 !important;
-        background-color: #2563eb !important;
+        background-color: #6366f1 !important;
         color: white !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         width: 100% !important;
         height: 48px !important;
         border: none !important;
         transition: all 0.3s ease;
+        margin-top: 15px;
     }}
     
     div.stButton > button:hover {{
-        background-color: #1d4ed8 !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        background-color: #4f46e5 !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     }}
     
-    .wix-footer {{
-        font-size: 11px;
-        color: #dddddd;
-        margin-top: 25px;
-        line-height: 1.5;
-        font-family: 'Syne', sans-serif;
-    }}
-    
-    /* Muundo wa Nembo ya Juu Kushoto na Uhuishaji (Animation) */
+    /* Logo Animations Inside Poster Area */
     .header-logo-container {{
         display: flex;
         align-items: center;
         gap: 14px;
-        margin-left: 20px;
-        margin-top: 15px;
-        font-family: 'Syne', sans-serif;
     }}
 
     .header-logo-img {{
-        width: 48px;
+        width: 52px;
         height: auto;
     }}
 
-    /* Wrapper ya kuweka maneno yakae mstari mmoja juu ya mwingine */
     .logo-text-wrapper {{
         display: flex;
         flex-direction: column;
@@ -187,31 +207,47 @@ custom_css = f"""
         text-align: left;
     }}
 
-    /* Sadallah: Inatokea Juu kwenda chini */
     .anim-sadallah {{
         font-weight: 800;
-        font-size: 22px;
+        font-size: 26px;
         letter-spacing: -0.5px;
+        color: #ffffff;
         display: block;
         opacity: 0;
-        color: #ffffff;        transform: translateY(-20px);
+        transform: translateY(-25px);
         animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }}
 
-    /* Software: Inatokea Chini kwenda juu na ina rangi ya Cyan Blue */
     .anim-software {{
-        font-weight: 800;
+        font-weight: 700;
         font-size: 22px;
         letter-spacing: -0.5px;
-        color: #00b4d8 !important; /* Rangi halisi ya Cyan Blue ya Logo yako */
+        color: #00b4d8 !important;
         display: block;
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(25px);
         animation: slideFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        animation-delay: 0.15s; /* Inachelewa kidogo ili kuleta muonekano wa kifahari */
+        animation-delay: 0.18s;
     }}
 
-    /* KEYFRAMES ZA HUISHI (ANIMATION EFFECTS) */
+    /* Dots indicator for look and feel */
+    .indicator-dots {{
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+    }}
+    .dot {{
+        width: 24px;
+        height: 4px;
+        background-color: #ffffff;
+        border-radius: 2px;
+    }}
+    .dot.inactive {{
+        width: 12px;
+        background-color: #52525b;
+    }}
+
+    /* KEYFRAMES */
     @keyframes slideFromTop {{
         to {{
             opacity: 1;
@@ -225,8 +261,13 @@ custom_css = f"""
             transform: translateY(0);
         }}
     }}
+
+    @keyframes slideFromRight {{
+        to {{
+            transform: translateX(0);
+        }}
+    }}
     
-    /* Mitindo ya redio button ya kuchagulia log in/sign up */
     div[data-testid="stRadio"] label {{
         color: #ffffff !important;
         font-family: 'Syne', sans-serif !important;
@@ -237,47 +278,55 @@ custom_css = f"""
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. Mfumo wa Kuingia (Login/Signup Screen)
+# 3. Mfumo wa Kuingia (Split Login UI Trigger)
 # =====================================================================
 if not st.session_state["logged_in"]:
-    # Nembo ya Juu Kushoto ikiwa na Maandishi yenye Uhuishaji (Animation)
-    if logo_b64:
-        st.markdown(f'''
-            <div class="header-logo-container">
-                <img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />
-                <div class="logo-text-wrapper">
-                    <span class="anim-sadallah">Sadallah</span>
-                    <span class="anim-software">Software</span>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-    else:
-        st.markdown('''
-            <div class="header-logo-container">
-                <div class="logo-text-wrapper">
-                    <span class="anim-sadallah" style="color:#fff;">Sadallah</span>
-                    <span class="anim-software">Software</span>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
     
-    _, center_col, _ = st.columns([1, 1.8, 1])
+    # Tunatumia st.columns za Streamlit kutengeneza space ya katikati
+    _, main_wrapper, _ = st.columns([0.2, 9, 0.2])
     
-    with center_col:
+    with main_wrapper:
+        # Sehemu ya kuchagua log in au sign up ipo juu ya kibox
         form_mode = st.radio("Chagua Kitendo", ["Kuingia (Log In)", "Kujisajili (Sign Up)"], label_visibility="collapsed", horizontal=True)
         
-        if form_mode == "Kuingia (Log In)":
-            st.markdown('''
-                <div class="wix-card">
-                    <div class="wix-title">Log In</div>
-                    <div class="wix-subtitle">Ingia kwenye mfumo wa Gemini Enterprise Engine</div>
+        # Nembo na picha base64 assembly
+        img_tag = f'<img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />' if logo_b64 else ''
+        
+        # Kuanza kutengeneza ule muundo wa pande mbili kwa HTML
+        poster_html = f'''
+        <div class="split-container">
+            <div class="poster-side">
+                <div class="header-logo-container">
+                    {img_tag}
+                    <div class="logo-text-wrapper">
+                        <span class="anim-sadallah">Sadallah</span>
+                        <span class="anim-software">Software</span>
+                    </div>
                 </div>
-            ''', unsafe_allow_html=True)
+                
+                <div>
+                    <div class="sliding-text">
+                        Capturing Moments,<br/>Creating Future Technology.
+                    </div>
+                    <div class="indicator-dots">
+                        <div class="dot"></div>
+                        <div class="dot inactive"></div>
+                        <div class="dot inactive"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-side">
+        '''
+        st.markdown(poster_html, unsafe_allow_html=True)
+        
+        # Kuweka input controllers ndani ya eneo la Kulia la Fomu
+        if form_mode == "Kuingia (Log In)":
+            st.markdown('<div class="form-title">Create an account</div><div class="form-subtitle">Already have an account? Log in below.</div>', unsafe_allow_html=True)
             
             login_email = st.text_input("Email Address", placeholder="name@example.com", key="login_email_key").strip()
             login_pass = st.text_input("Password", type="password", placeholder="Enter your password", key="login_pass_key").strip()
             
-            st.markdown("<br/>", unsafe_allow_html=True)
             if st.button("Continue with Email", key="btn_login"):
                 if login_email and login_pass:
                     try:
@@ -297,19 +346,13 @@ if not st.session_state["logged_in"]:
                     st.warning("Tafadhali jaza nafasi zote.")
                     
         else:
-            st.markdown('''
-                <div class="wix-card">
-                    <div class="wix-title">Sign up</div>
-                    <div class="wix-subtitle">Tengeneza akaunti ya biashara yako sasa hivi</div>
-                </div>
-            ''', unsafe_allow_html=True)
+            st.markdown('<div class="form-title">Create account</div><div class="form-subtitle">Tengeneza akaunti ya biashara yako sasa hivi</div>', unsafe_allow_html=True)
             
             reg_biz = st.text_input("Business Name", placeholder="Mfano: Sadallah Software", key="reg_biz_key").strip()
             reg_email = st.text_input("Email Address", placeholder="name@example.com", key="reg_email_key").strip()
             reg_pass = st.text_input("Password", type="password", placeholder="Create an enterprise password", key="reg_pass_key").strip()
             
-            st.markdown("<br/>", unsafe_allow_html=True)
-            if st.button("Sign Up with Email", key="btn_reg"):
+            if st.button("Create Account", key="btn_reg"):
                 if reg_biz and reg_email and reg_pass:
                     try:
                         hashed = hash_password(reg_pass)
@@ -324,13 +367,9 @@ if not st.session_state["logged_in"]:
                         st.error(f"Imeshindwa kusajili: {e}")
                 else:
                     st.warning("Tafadhali jaza fomu yote.")
-                    
-        st.markdown('''
-            <div style="text-align: center;" class="wix-footer">
-                * By signing up, you agree to our <span style="text-decoration: underline; cursor: pointer;">Terms of Use</span> 
-                and acknowledge you have read the <span style="text-decoration: underline; cursor: pointer;">Privacy Policy</span>.
-            </div>
-        ''', unsafe_allow_html=True)
+        
+        # Funga Ma-Div yote ya Split interface
+        st.markdown('</div></div>', unsafe_allow_html=True)
         
     st.stop()
 
