@@ -203,7 +203,8 @@ if not st.session_state["logged_in"]:
         st.markdown(f'''
             <div class="header-logo-container">
                 <img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />
-                <span class="header-logo-text">Sadallah Software</span>
+                <span class="header-logo-text">Sadallah<br/>
+                Software</span>
             </div>
         ''', unsafe_allow_html=True)
     else:
