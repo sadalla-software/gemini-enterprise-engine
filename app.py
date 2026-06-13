@@ -7,6 +7,7 @@ import requests
 import hashlib
 import base64
 import io
+import os
 
 # Maktaba za ReportLab kwa ajili ya kutengeneza PDF
 from reportlab.lib.pagesizes import letter
@@ -22,6 +23,19 @@ try:
 except ImportError:
     st.error("Tafadhali sakinisha maktaba ya sauti kwa kupiga: pip install streamlit-mic-recorder")
     st.stop()
+
+# =====================================================================
+# FUNCTION ZA KUBADILISHA PICHA KUWA BASE64 (Kwa ajili ya HTML/CSS)
+# =====================================================================
+def get_base64_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return ""
+
+# Kusoma Logo na Picha ya Background
+logo_b64 = get_base64_image("Sadallah Software3.png")
+bg_b64 = get_base64_image("Abc.jpg")
 
 # =====================================================================
 # 1. FUNGUO ZA KUSHUGULIKIA SEVA
@@ -47,60 +61,86 @@ def hash_password(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
 # =====================================================================
-# 2. DESIGN & STYLING (SYNE FONT & PREMIUM BACKGROUND)
+# 2. DESIGN & STYLING (SYNE FONT & PREMIUM DARK BACKGROUND IMAGE)
 # =====================================================================
-# CSS maalum ya kubadilisha muonekano kufanana na Screenshot 2026-06-13 181512.jpg
-custom_css = """
+# Kama login haijafanyika, weka picha ya background ya mtumiaji. Ikifanyika, weka background safi ya kazi.
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+    st.session_state["business_name"] = ""
+
+if not st.session_state["logged_in"]:
+    background_css = f"""
+    html, body, [data-testid="stAppViewContainer"], .stApp {{
+        font-family: 'Syne', sans-serif !important;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("data:image/jpeg;base64,{bg_b64}") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+    }}
+    .header-logo-text {{
+        color: #ffffff !important;
+    }}
+    """
+else:
+    background_css = """
+    html, body, [data-testid="stAppViewContainer"], .stApp {{
+        font-family: 'Syne', sans-serif !important;
+        background: #ffffff !important;
+    }}
+    .header-logo-text {{
+        color: #111111 !important;
+    }}
+    """
+
+custom_css = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap');
 
-    /* Kubadilisha Font ya App nzima kuwa Syne */
-    html, body, [data-testid="stAppViewContainer"], .stApp {
-        font-family: 'Syne', sans-serif !important;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
-    }
+    {background_css}
     
-    /* Kuficha Header ya kawaida ya Streamlit ili kupata muonekano safi */
-    [data-testid="stHeader"] {
+    [data-testid="stHeader"] {{
         background: transparent !important;
-    }
+    }}
 
-    /* Kadi ya katikati ya Login/Signup kufanana na Wix design */
-    .wix-card {
+    /* Kadi ya katikati ya Login/Signup (Wix layout adaptation) */
+    .wix-card {{
         background-color: #ffffff;
         padding: 40px 45px;
         border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         max-width: 480px;
-        margin: 40px auto;
+        margin: 10px auto 30px auto;
         text-align: center;
-        border: 1px solid #f0f0f0;
-    }
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }}
 
-    .wix-title {
+    .wix-title {{
         font-size: 32px;
         font-weight: 700;
         color: #111111;
         margin-bottom: 5px;
-    }
+        font-family: 'Syne', sans-serif;
+    }}
 
-    .wix-subtitle {
+    .wix-subtitle {{
         font-size: 14px;
         color: #666666;
-        margin-bottom: 30px;
-    }
+        margin-bottom: 20px;
+        font-family: 'Syne', sans-serif;
+    }}
 
-    /* Mitindo ya Viingilio vya Maandishi (Inputs) */
-    div[data-testid="stTextInput"] input {
+    /* Mitindo ya Viingilio vya Maandishi */
+    div[data-testid="stTextInput"] input {{
         font-family: 'Syne', sans-serif !important;
         border-radius: 6px !important;
         border: 1px solid #cccccc !important;
         padding: 12px !important;
         height: 48px !important;
-    }
+        color: #111111 !important;
+    }}
 
-    /* Mitindo ya Vitufe (Buttons) kufanana na kadi ya Wix */
-    div.stButton > button {
+    /* Mitindo ya Vitufe */
+    div.stButton > button {{
         font-family: 'Syne', sans-serif !important;
         font-weight: 700 !important;
         background-color: #2563eb !important;
@@ -110,39 +150,68 @@ custom_css = """
         height: 48px !important;
         border: none !important;
         transition: all 0.3s ease;
-    }
+    }}
     
-    div.stButton > button:hover {
+    div.stButton > button:hover {{
         background-color: #1d4ed8 !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    }
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }}
     
-    .wix-footer {
+    .wix-footer {{
         font-size: 11px;
-        color: #888888;
+        color: #dddddd;
         margin-top: 25px;
         line-height: 1.5;
-    }
+        font-family: 'Syne', sans-serif;
+    }}
+    
+    /* Muundo wa Nembo ya Juu Kushoto */
+    .header-logo-container {{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: 20px;
+        margin-top: 10px;
+        font-family: 'Syne', sans-serif;
+    }}
+    .header-logo-img {{
+        width: 45px;
+        height: auto;
+    }}
+    .header-logo-text {{
+        font-weight: 800;
+        font-size: 24px;
+        letter-spacing: -0.5px;
+    }}
+    
+    /* Mitindo ya redio button ya kuchagulia log in/sign up */
+    div[data-testid="stRadio"] label {{
+        color: #ffffff !important;
+        font-family: 'Syne', sans-serif !important;
+        font-weight: 700;
+    }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. Mfumo wa Kuingia (Custom Login/Signup Form)
+# 3. Mfumo wa Kuingia (Login/Signup Screen)
 # =====================================================================
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
-    st.session_state["business_name"] = ""
-
 if not st.session_state["logged_in"]:
-    # Logo ya juu kushoto kama Wix
-    st.markdown("<h2 style='font-weight:800; color:#111; margin-left:20px; font-family:\"Syne\"'>SADALLAH</h2>", unsafe_allow_html=True)
+    # Nembo ya Juu Kushoto
+    if logo_b64:
+        st.markdown(f'''
+            <div class="header-logo-container">
+                <img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />
+                <span class="header-logo-text">SADALLAH</span>
+            </div>
+        ''', unsafe_allow_html=True)
+    else:
+        st.markdown("<h2 style='font-weight:800; color:#fff; margin-left:20px; font-family:\"Syne\"'>SADALLAH</h2>", unsafe_allow_html=True)
     
-    # Kutengeneza safu za katikati ili kadi ikae center ya screen
     _, center_col, _ = st.columns([1, 1.8, 1])
     
     with center_col:
-        # Kichupo cha kuchagua kuingia au kujisajili
         form_mode = st.radio("Chagua Kitendo", ["Kuingia (Log In)", "Kujisajili (Sign Up)"], label_visibility="collapsed", horizontal=True)
         
         if form_mode == "Kuingia (Log In)":
@@ -204,7 +273,6 @@ if not st.session_state["logged_in"]:
                 else:
                     st.warning("Tafadhali jaza fomu yote.")
                     
-        # Sehemu ya chini ya kadi (Terms & Privacy) kama ilivyo kwenye kadi ya Wix
         st.markdown('''
             <div style="text-align: center;" class="wix-footer">
                 * By signing up, you agree to our <span style="text-decoration: underline; cursor: pointer;">Terms of Use</span> 
@@ -219,16 +287,20 @@ if not st.session_state["logged_in"]:
 # =====================================================================
 biz_name_input = st.session_state["business_name"]
 
-# Kurudisha sidebar pindi mtumiaji akishaingia ndani
+if logo_b64:
+    st.sidebar.markdown(f'''
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <img src="data:image/png;base64,{logo_b64}" style="width: 35px; height: auto;" />
+            <span style="font-weight: 800; font-size: 18px; color: #111111; font-family: 'Syne';">SADALLAH</span>
+        </div>
+    ''', unsafe_allow_html=True)
+
 st.sidebar.title(f"🏢 {biz_name_input}")
 st.sidebar.write("Umeingia salama mtandaoni.")
 if st.sidebar.button("📴 Tokea Kwenye Mfumo (Logout)"):
     st.session_state["logged_in"] = False
     st.session_state["business_name"] = ""
     st.rerun()
-
-# Ndani ya Dashboard, tunarudisha font ya Syne lakini tunaweka background nyeupe ili isisumbue macho kusoma data
-st.markdown("<style>html, body, [data-testid=\"stAppViewContainer\"] { background: #ffffff !important; }</style>", unsafe_allow_html=True)
 
 st.title("🚀 Gemini Enterprise Engine (GEE)")
 st.subheader(f"Workspace Rasmi: {biz_name_input}")
