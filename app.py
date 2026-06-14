@@ -9,12 +9,6 @@ import base64
 import io
 import os
 
-# Maktaba za ReportLab kwa ajili ya kutengeneza PDF
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-
 st.set_page_config(page_title="Gemini Enterprise Engine", layout="wide", initial_sidebar_state="collapsed")
 
 # Hakikisha maktaba ya sauti ipo
@@ -33,9 +27,7 @@ def get_base64_image(image_path):
             return base64.b64encode(img_file.read()).decode()
     return ""
 
-# Kusoma Logo na Picha ya Background
 logo_b64 = get_base64_image("Sadallah Software3.png")
-bg_b64 = get_base64_image("Abc.jpg")
 
 # =====================================================================
 # 1. FUNGUO ZA KUSHUGULIKIA SEVA
@@ -61,224 +53,209 @@ def hash_password(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
 # =====================================================================
-# 2. DESIGN & STYLING (SYNE FONT & PREMIUM DARK BACKGROUND IMAGE)
+# 2. DESIGN & STYLING (GLASSMORPHISM PREMIUM BLUE LIKE SCREENSHOT)
 # =====================================================================
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["business_name"] = ""
 
-if not st.session_state["logged_in"]:
-    background_css = f"""
-    html, body, [data-testid="stAppViewContainer"], .stApp {{
-        font-family: 'Syne', sans-serif !important;
-        background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("data:image/jpeg;base64,{bg_b64}") !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
-    }}
-    .header-logo-text {{
-        color: #ffffff !important;
-    }}
-    """
-else:
-    background_css = """
-    html, body, [data-testid="stAppViewContainer"], .stApp {{
-        font-family: 'Syne', sans-serif !important;
-        background: #ffffff !important;
-    }}
-    .header-logo-text {{
-        color: #111111 !important;
-    }}
-    """
-
-custom_css = f"""
+# CSS ya Glassmorphism (Inaiga muonekano wa Screenshot 2026-06-14 095158.png)
+glass_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap');
 
-    {background_css}
-    
-    [data-testid="stHeader"] {{
-        background: transparent !important;
-    }}
-
-    /* Kadi ya katikati ya Login/Signup (Wix layout adaptation) */
-    .wix-card {{
-        background-color: #ffffff;
-        padding: 40px 45px;
-        border-radius: 12px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-        max-width: 480px;
-        margin: 10px auto 30px auto;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }}
-
-    .wix-title {{
-        font-size: 32px;
-        font-weight: 700;
-        color: #111111;
-        margin-bottom: 5px;
-        font-family: 'Syne', sans-serif;
-    }}
-
-    .wix-subtitle {{
-        font-size: 14px;
-        color: #666666;
-        margin-bottom: 20px;
-        font-family: 'Syne', sans-serif;
-    }}
-
-    /* Mitindo ya Viingilio vya Maandishi */
-    div[data-testid="stTextInput"] input {{
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        background: radial-gradient(circle at 20% 30%, #0077b6 0%, #0096c7 30%, #03045e 100%) !important;
         font-family: 'Syne', sans-serif !important;
-        border-radius: 6px !important;
-        border: 1px solid #cccccc !important;
-        padding: 12px !important;
-        height: 48px !important;
-        color: #111111 !important;
-    }}
+    }
+    
+    [data-testid="stHeader"] {
+        background: transparent !important;
+    }
 
-    /* Mitindo ya Vitufe */
-    div.stButton > button {{
+    /* Premium Frosted Glass Card Container */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        padding: 45px;
+        max-width: 480px;
+        margin: 20px auto;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+
+    .glass-title {
+        font-size: 30px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 15px;
+        margin-bottom: 25px;
+        text-align: left;
+    }
+
+    /* Custom Input Fields (White background, gray text like new spec) */
+    div[data-testid="stTextInput"] label {
+        color: #ffffff !important;
         font-family: 'Syne', sans-serif !important;
         font-weight: 700 !important;
-        background-color: #2563eb !important;
-        color: white !important;
-        border-radius: 6px !important;
+        font-size: 14px !important;
+        text-align: left !important;
+        display: block !important;
+        margin-bottom: 6px !important;
+    }
+
+    div[data-testid="stTextInput"] input {
+        font-family: 'Syne', sans-serif !important;
+        border-radius: 12px !important;
+        border: none !important;
+        background-color: #ffffff !important;
+        padding: 14px !important;
+        height: 50px !important;
+        color: #2d3748 !important;
+        font-size: 15px !important;
+    }
+    
+    div[data-testid="stTextInput"] input::placeholder {
+        color: #a0aec0 !important;
+    }
+
+    /* Deep Navy Sign In Button */
+    div.stButton > button {
+        font-family: 'Syne', sans-serif !important;
+        font-weight: 700 !important;
+        background-color: #03045e !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
         width: 100% !important;
-        height: 48px !important;
+        height: 52px !important;
         border: none !important;
         transition: all 0.3s ease;
-    }}
+        margin-top: 20px;
+        font-size: 16px !important;
+        letter-spacing: 0.5px;
+    }
     
-    div.stButton > button:hover {{
-        background-color: #1d4ed8 !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }}
+    div.stButton > button:hover {
+        background-color: #023e8a !important;
+        box-shadow: 0 8px 25px rgba(3, 4, 94, 0.45);
+        transform: translateY(-1px);
+    }
     
-    .wix-footer {{
-        font-size: 11px;
-        color: #dddddd;
-        margin-top: 25px;
-        line-height: 1.5;
-        font-family: 'Syne', sans-serif;
-    }}
-    
-    /* Muundo wa Nembo ya Juu Kushoto na Uhuishaji (Animation) */
-    .header-logo-container {{
+    /* Animated Logo Styles inside Glass Card */
+    .glass-logo-container {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 14px;
-        margin-left: 20px;
-        margin-top: 15px;
-        font-family: 'Syne', sans-serif;
-    }}
+        margin-bottom: 10px;
+    }
 
-    .header-logo-img {{
-        width: 48px;
+    .glass-logo-img {
+        width: 55px;
         height: auto;
-    }}
+    }
 
-    /* Wrapper ya kuweka maneno yakae mstari mmoja juu ya mwingine */
-    .logo-text-wrapper {{
+    .glass-text-wrapper {
         display: flex;
         flex-direction: column;
         line-height: 1.1;
         text-align: left;
-    }}
+    }
 
-    /* Sadallah: Inatokea Juu kwenda chini */
-    .anim-sadallah {{
+    .anim-sadallah {
         font-weight: 800;
-        font-size: 22px;
+        font-size: 26px;
         letter-spacing: -0.5px;
-        display: block;
+        color: #ffffff;
         opacity: 0;
-        color: #ffffff;        transform: translateY(-20px);
+        transform: translateY(-20px);
         animation: slideFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }}
+    }
 
-    /* Software: Inatokea Chini kwenda juu na ina rangi ya Cyan Blue */
-    .anim-software {{
-        font-weight: 800;
-        font-size: 22px;
+    .anim-software {
+        font-weight: 700;
+        font-size: 21px;
         letter-spacing: -0.5px;
-        color: #00b4d8 !important; /* Rangi halisi ya Cyan Blue ya Logo yako */
-        display: block;
+        color: #00b4d8 !important;
         opacity: 0;
         transform: translateY(20px);
         animation: slideFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        animation-delay: 0.15s; /* Inachelewa kidogo ili kuleta muonekano wa kifahari */
-    }}
+        animation-delay: 0.15s;
+    }
 
-    /* KEYFRAMES ZA HUISHI (ANIMATION EFFECTS) */
-    @keyframes slideFromTop {{
-        to {{
-            opacity: 1;
-            transform: translateY(0);
-        }}
-    }}
+    .glass-footer-text {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        margin-top: 25px;
+    }
 
-    @keyframes slideFromBottom {{
-        to {{
-            opacity: 1;
-            transform: translateY(0);
-        }}
-    }}
+    /* KEYFRAMES */
+    @keyframes slideFromTop {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideFromBottom {
+        to { opacity: 1; transform: translateY(0); }
+    }
     
-    /* Mitindo ya redio button ya kuchagulia log in/sign up */
-    div[data-testid="stRadio"] label {{
+    div[data-testid="stRadio"] label {
         color: #ffffff !important;
         font-family: 'Syne', sans-serif !important;
         font-weight: 700;
-    }}
+    }
 </style>
 """
-st.markdown(custom_css, unsafe_allow_html=True)
+
+dashboard_css = """
+<style>
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        background-color: #ffffff !important;
+        color: #111111 !important;
+        font-family: 'Syne', sans-serif !important;
+    }
+</style>
+"""
+
+if not st.session_state["logged_in"]:
+    st.markdown(glass_css, unsafe_allow_html=True)
+else:
+    st.markdown(dashboard_css, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. Mfumo wa Kuingia (Login/Signup Screen)
+# 3. MFUMO WA LOG IN (GLASSMORPHISM CONTEXT UI)
 # =====================================================================
 if not st.session_state["logged_in"]:
-    # Nembo ya Juu Kushoto ikiwa na Maandishi yenye Uhuishaji (Animation)
-    if logo_b64:
-        st.markdown(f'''
-            <div class="header-logo-container">
-                <img src="data:image/png;base64,{logo_b64}" class="header-logo-img" />
-                <div class="logo-text-wrapper">
+    
+    _, main_wrapper, _ = st.columns([1, 2, 1])
+    
+    with main_wrapper:
+        # Kitendo cha kuchagua mode
+        form_mode = st.radio("Chagua Kitendo", ["Login", "Register for free"], label_visibility="collapsed", horizontal=True)
+        
+        # Jenga Kadi ya Juu ya nembo
+        img_tag = f'<img src="data:image/png;base64,{logo_b64}" class="glass-logo-img" />' if logo_b64 else ''
+        
+        card_start_html = f'''
+        <div class="glass-card">
+            <div class="glass-logo-container">
+                {img_tag}
+                <div class="glass-text-wrapper">
                     <span class="anim-sadallah">Sadallah</span>
                     <span class="anim-software">Software</span>
                 </div>
             </div>
-        ''', unsafe_allow_html=True)
-    else:
-        st.markdown('''
-            <div class="header-logo-container">
-                <div class="logo-text-wrapper">
-                    <span class="anim-sadallah" style="color:#fff;">Sadallah</span>
-                    <span class="anim-software">Software</span>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-    
-    _, center_col, _ = st.columns([1, 1.8, 1])
-    
-    with center_col:
-        form_mode = st.radio("Chagua Kitendo", ["Kuingia (Log In)", "Kujisajili (Sign Up)"], label_visibility="collapsed", horizontal=True)
+        '''
+        st.markdown(card_start_html, unsafe_allow_html=True)
         
-        if form_mode == "Kuingia (Log In)":
-            st.markdown('''
-                <div class="wix-card">
-                    <div class="wix-title">Log In</div>
-                    <div class="wix-subtitle">Ingia kwenye mfumo wa Gemini Enterprise Engine</div>
-                </div>
-            ''', unsafe_allow_html=True)
+        if form_mode == "Login":
+            st.markdown('<div class="glass-title">Login</div>', unsafe_allow_html=True)
             
-            login_email = st.text_input("Email Address", placeholder="name@example.com", key="login_email_key").strip()
-            login_pass = st.text_input("Password", type="password", placeholder="Enter your password", key="login_pass_key").strip()
+            login_email = st.text_input("Email", placeholder="username@gmail.com", key="login_email_key").strip()
+            login_pass = st.text_input("Password", type="password", placeholder="Password", key="login_pass_key").strip()
             
-            st.markdown("<br/>", unsafe_allow_html=True)
-            if st.button("Continue with Email", key="btn_login"):
+            if st.button("Sign in", key="btn_login"):
                 if login_email and login_pass:
                     try:
                         res = supabase.table("business_users").select("*").eq("email", login_email).execute()
@@ -287,29 +264,22 @@ if not st.session_state["logged_in"]:
                         if user_data and user_data[0]["password_hash"] == hash_password(login_pass):
                             st.session_state["logged_in"] = True
                             st.session_state["business_name"] = user_data[0]["business_name"]
-                            st.success(f"Karibu tena {st.session_state['business_name']}!")
                             st.rerun()
                         else:
-                            st.error("Email au Password si sahihi. Tafadhali jaribu tena.")
+                            st.error("Email au Password si sahihi.")
                     except Exception as e:
-                        st.error(f"Hitilafu ya kuingia: {e}")
+                        st.error(f"Hitilafu: {e}")
                 else:
                     st.warning("Tafadhali jaza nafasi zote.")
                     
         else:
-            st.markdown('''
-                <div class="wix-card">
-                    <div class="wix-title">Sign up</div>
-                    <div class="wix-subtitle">Tengeneza akaunti ya biashara yako sasa hivi</div>
-                </div>
-            ''', unsafe_allow_html=True)
+            st.markdown('<div class="glass-title">Register</div>', unsafe_allow_html=True)
             
-            reg_biz = st.text_input("Business Name", placeholder="Mfano: Sadallah Software", key="reg_biz_key").strip()
-            reg_email = st.text_input("Email Address", placeholder="name@example.com", key="reg_email_key").strip()
-            reg_pass = st.text_input("Password", type="password", placeholder="Create an enterprise password", key="reg_pass_key").strip()
+            reg_biz = st.text_input("Business Name", placeholder="Mfano: Sadallah Workspace", key="reg_biz_key").strip()
+            reg_email = st.text_input("Email Address", placeholder="username@gmail.com", key="reg_email_key").strip()
+            reg_pass = st.text_input("Password", type="password", placeholder="Create password", key="reg_pass_key").strip()
             
-            st.markdown("<br/>", unsafe_allow_html=True)
-            if st.button("Sign Up with Email", key="btn_reg"):
+            if st.button("Sign up", key="btn_reg"):
                 if reg_biz and reg_email and reg_pass:
                     try:
                         hashed = hash_password(reg_pass)
@@ -319,18 +289,18 @@ if not st.session_state["logged_in"]:
                             "password_hash": hashed
                         }
                         supabase.table("business_users").insert(user_record).execute()
-                        st.success("🎉 Akaunti imesajiliwa! Badili redio kwenda kwenye 'Log In' ili kuingia.")
+                        st.success("🎉 Umesajiliwa kikamilifu! Hamia kwenye tab ya Login kuingia.")
                     except Exception as e:
                         st.error(f"Imeshindwa kusajili: {e}")
                 else:
                     st.warning("Tafadhali jaza fomu yote.")
-                    
-        st.markdown('''
-            <div style="text-align: center;" class="wix-footer">
-                * By signing up, you agree to our <span style="text-decoration: underline; cursor: pointer;">Terms of Use</span> 
-                and acknowledge you have read the <span style="text-decoration: underline; cursor: pointer;">Privacy Policy</span>.
-            </div>
-        ''', unsafe_allow_html=True)
+        
+        if form_mode == "Login":
+            st.markdown('<div class="glass-footer-text">Don\'t have an account yet? Register for free above</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="glass-footer-text">Already have an account? Switch to Login above</div>', unsafe_allow_html=True)
+            
+        st.markdown('</div>', unsafe_allow_html=True)
         
     st.stop()
 
@@ -348,7 +318,7 @@ if logo_b64:
     ''', unsafe_allow_html=True)
 
 st.sidebar.title(f"🏢 {biz_name_input}")
-st.sidebar.write("Umeingia salama mtandaoni.")
+st.sidebar.write("Umeingia salama.")
 if st.sidebar.button("📴 Tokea Kwenye Mfumo (Logout)"):
     st.session_state["logged_in"] = False
     st.session_state["business_name"] = ""
@@ -434,12 +404,12 @@ if st.button("Chambua na Uhifadhi") or (audio_record is not None and audio_bytes
                     st.success(f"🎉 Muamala wa {biz_name_input} umetafsiriwa na kuhifadhiwa!")
                     st.rerun()
                 elif 'error' in response_json and response_json['error']['code'] == 429:
-                    st.error("⏳ Mfumo una matumizi makubwa kwa sasa (Daily Free Quota Exceeded). Tafadhali subiri kidogo au weka API Key nyingine ili kuendelea.")
+                    st.error("⏳ Free daily limit imefikiwa. Tafadhali subiri kidogo.")
                 else:
                     st.error(f"Gemini API Error Response: {response_json}")
                 
             except Exception as e:
-                st.error(f"Kuna kitu kimefeli wakati wa kuchakata muamala: {e}")
+                st.error(f"Kuna kitu kimefeli wakati wa kuchakata: {e}")
     else:
         st.warning("Tafadhali andika maelezo au rekodi sauti kwanza.")
 
